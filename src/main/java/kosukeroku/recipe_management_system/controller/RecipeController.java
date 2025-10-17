@@ -49,7 +49,7 @@ public class RecipeController {
         recipeService.updateRecipeById(id, recipe);
     }
 
-    @GetMapping({"/search/", "/search"})
+    @GetMapping( "/search")
     public ResponseEntity<List<RecipeResponseDto>> searchRecipeByCategoryOrName(
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String name) {
