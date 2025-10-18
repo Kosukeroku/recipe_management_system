@@ -7,6 +7,7 @@ import kosukeroku.recipe_management_system.mapper.RecipeMapper;
 import kosukeroku.recipe_management_system.model.Recipe;
 import kosukeroku.recipe_management_system.repository.RecipeRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.LocalDateTime;
@@ -52,8 +53,10 @@ public class RecipeService {
     }
 
     public void updateRecipeById(long id, RecipeRequestDto recipeDto) {
+
         Recipe existingRecipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new RecipeNotFoundException(id));
+
 
         existingRecipe.setName(recipeDto.getName());
         existingRecipe.setCategory(recipeDto.getCategory());
@@ -61,6 +64,7 @@ public class RecipeService {
         existingRecipe.setIngredients(recipeDto.getIngredients());
         existingRecipe.setDirections(recipeDto.getDirections());
         existingRecipe.setDate(LocalDateTime.now());
+
 
         recipeRepository.save(existingRecipe);
     }

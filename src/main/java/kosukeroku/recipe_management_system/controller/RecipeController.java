@@ -46,6 +46,7 @@ public class RecipeController {
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateRecipe(@PathVariable Long id, @RequestBody @Valid RecipeRequestDto recipe) {
+
         recipeService.updateRecipeById(id, recipe);
     }
 
