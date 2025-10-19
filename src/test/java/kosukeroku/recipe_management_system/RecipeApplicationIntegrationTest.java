@@ -5,7 +5,6 @@ import kosukeroku.recipe_management_system.dto.RecipeRequestDto;
 import kosukeroku.recipe_management_system.dto.RecipeResponseDto;
 import kosukeroku.recipe_management_system.model.Recipe;
 import kosukeroku.recipe_management_system.repository.RecipeRepository;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +14,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -89,7 +87,7 @@ class RecipeApplicationIntegrationTest {
         //update
         RecipeRequestDto updateRequest = new RecipeRequestDto(
                 "Updated pasta Carbonara",
-                "lalal",
+                "dinner",
                 requestDto.getDescription(),
                 requestDto.getIngredients(),
                 requestDto.getDirections()
@@ -110,7 +108,7 @@ class RecipeApplicationIntegrationTest {
         Recipe expectedUpdatedRecipe = new Recipe(
                 id,
                 "Updated pasta Carbonara",
-                "lalal",
+                "dinner",
                 LocalDateTime.now(),
                 "Creamy Italian pasta with bacon",
                 List.of("spaghetti", "eggs", "bacon", "parmesan"),
@@ -148,33 +146,141 @@ class RecipeApplicationIntegrationTest {
     }
 
     @Test
-    @Transactional
-    void searchByCategory_ShouldReturnFilteredResults() {
-        Recipe recipe1 = new Recipe();
-        recipe1.setName("Pasta Carbonara");
-        recipe1.setCategory("dinner");
-        recipe1.setDescription("Description");
-        recipe1.setIngredients(List.of("ing1", "ing2"));
-        recipe1.setDirections(List.of("step1", "step2"));
+    void searchByCategory_ShouldReturnFilteredResults() throws InterruptedException {
+        Recipe recipe1 = createTestRecipeWithoutDate("Pasta Carbonara", "dinner");
+        recipe1.setDate(LocalDateTime.now().minusDays(2));
         recipeRepository.save(recipe1);
 
-        Recipe recipe2 = new Recipe();
-        recipe2.setName("Greek Salad");
-        recipe2.setCategory("dinner");
-        recipe2.setDescription("Description");
-        recipe2.setIngredients(List.of("ing1", "ing2"));
-        recipe2.setDirections(List.of("step1", "step2"));
+
+        Recipe recipe2 = createTestRecipeWithoutDate("Greek Salad", "dinner");
+        recipe2.setDate(LocalDateTime.now().minusDays(1));
         recipeRepository.save(recipe2);
 
-        Recipe recipe3 = new Recipe();
-        recipe3.setName("Chocolate Cake");
-        recipe3.setCategory("dessert");
-        recipe3.setDescription("Description");
-        recipe3.setIngredients(List.of("ing1", "ing2"));
-        recipe3.setDirections(List.of("step1", "step2"));
+
+        Recipe recipe3 = createTestRecipeWithoutDate("Chocolate Cake", "dessert");
+        recipe3.setDate(LocalDateTime.now());
         recipeRepository.save(recipe3);
+
+        ResponseEntity<RecipeResponseDto[]> response = restTemplate.getForEntity(
+                BASE_URL + "/search?category=dinner",
+                RecipeResponseDto[].class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).hasSize(2);
+        assertThat(response.getBody()[0].getName()).isEqualTo("Greek Salad");
+        assertThat(response.getBody()[1].getName()).isEqualTo("Pasta Carbonara");
 
     }
 
+    @Test
+    void searchByName_ShouldReturnFilteredResults() {
+        Recipe recipe1 = createTestRecipeWithoutDate("Pasta Carbonara", "dinner");
+        recipe1.setDate(LocalDateTime.now().minusDays(2));
+        recipeRepository.save(recipe1);
 
+
+        Recipe recipe2 = createTestRecipeWithoutDate("Pasta Bolognese", "dinner");
+        recipe2.setDate(LocalDateTime.now().minusDays(1));
+        recipeRepository.save(recipe2);
+
+
+        Recipe recipe3 = createTestRecipeWithoutDate("Chocolate Cake", "dessert");
+        recipe3.setDate(LocalDateTime.now());
+        recipeRepository.save(recipe3);
+
+        ResponseEntity<RecipeResponseDto[]> response = restTemplate.getForEntity(
+                BASE_URL + "/search?name=pasta",
+                RecipeResponseDto[].class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).hasSize(2);
+        assertThat(response.getBody()[0].getName()).isEqualTo("Pasta Bolognese");
+        assertThat(response.getBody()[1].getName()).isEqualTo("Pasta Carbonara");
+    }
+
+    @Test
+    void searchByNonPresentField_ShouldReturnEmptyList() {
+        Recipe recipe1 = createTestRecipeWithoutDate("Pasta Carbonara", "dinner");
+        recipe1.setDate(LocalDateTime.now().minusDays(2));
+        recipeRepository.save(recipe1);
+
+
+        Recipe recipe2 = createTestRecipeWithoutDate("Greek Salad", "dinner");
+        recipe2.setDate(LocalDateTime.now().minusDays(1));
+        recipeRepository.save(recipe2);
+
+
+        Recipe recipe3 = createTestRecipeWithoutDate("Chocolate Cake", "dessert");
+        recipe3.setDate(LocalDateTime.now());
+        recipeRepository.save(recipe3);
+
+        ResponseEntity<RecipeResponseDto[]> response = restTemplate.getForEntity(
+                BASE_URL + "/search?name=pizza",
+                RecipeResponseDto[].class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).hasSize(0);
+    }
+
+    @Test
+    void searchByBothParameters_ShouldReturn400() {
+        ResponseEntity<Void> response = restTemplate.getForEntity(
+                BASE_URL + "/search?name=pasta&category=dinner",
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void searchWithoutParameters_ShouldReturn400() {
+        ResponseEntity<Void> response = restTemplate.getForEntity(
+                BASE_URL + "/search",
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+
+    Recipe createTestRecipeWithoutDate(String name, String category) {
+
+        Recipe recipe = new Recipe();
+        recipe.setName(name);
+        recipe.setCategory(category);
+        recipe.setDescription("Description");
+        recipe.setIngredients(List.of("ing1", "ing2"));
+        recipe.setDirections(List.of("step1", "step2"));
+
+        return recipe;
+    }
+
+    @Test
+    void getNonExistentRecipe_ShouldReturn404() {
+        ResponseEntity<Void> response = restTemplate.getForEntity(BASE_URL + "/999", Void.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void createRecipeWithEmptyName_ShouldReturn400() {
+        RecipeRequestDto invalidRequest = new RecipeRequestDto(
+                "",
+                "dinner",
+                "Valid description",
+                List.of("ingredient1", "ingredient2"),
+                List.of("step1", "step2")
+        );
+
+        ResponseEntity<Void> response = restTemplate.postForEntity(
+                BASE_URL + "/new",
+                invalidRequest,
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(recipeRepository.findAll()).isEmpty();
+    }
 }
