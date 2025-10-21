@@ -29,6 +29,10 @@ public class RecipeController {
         return Map.of("id", id);
     }
 
+    @GetMapping("/all")
+    public List<RecipeResponseDto> getAllRecipes() {
+        return recipeService.getAllRecipes();
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<RecipeResponseDto> getRecipe(@PathVariable("id") long id) {
