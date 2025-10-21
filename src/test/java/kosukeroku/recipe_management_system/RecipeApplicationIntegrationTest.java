@@ -283,4 +283,5 @@ class RecipeApplicationIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(recipeRepository.findAll()).isEmpty();
     }
+
 }

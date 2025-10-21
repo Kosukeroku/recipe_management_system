@@ -26,13 +26,6 @@ public class Recipe {
     private LocalDateTime date;
     private String description;
 
-    /*public Recipe(String name, String category, String description, List<String> ingredients, List<String> directions) {
-        this.name = name;
-        this.category = category;
-        this.description = description;
-        this.
-    }*/
-
     @ElementCollection
     private List<String> ingredients;
 
