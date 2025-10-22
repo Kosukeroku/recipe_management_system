@@ -22,6 +22,11 @@ public class RecipeMapper {
         recipeDto.setDirections(recipe.getDirections());
         recipeDto.setCategory(recipe.getCategory());
         recipeDto.setDate(recipe.getDate().toString());
+
+        if (recipe.getAuthor() != null) {
+            recipeDto.setAuthorEmail(recipe.getAuthor().getEmail());
+        }
+
         return recipeDto;
     }
 

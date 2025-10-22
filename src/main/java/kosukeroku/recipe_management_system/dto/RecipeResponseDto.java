@@ -21,4 +21,5 @@ public class RecipeResponseDto {
     private String description;
     private List<String> ingredients;
     private List<String> directions;
+    private String authorEmail;
 }

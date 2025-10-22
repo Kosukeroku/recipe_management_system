@@ -32,4 +32,8 @@ public class Recipe {
     @ElementCollection
     private List<String> directions;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User author;
+
 }

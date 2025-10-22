@@ -3,11 +3,12 @@ package kosukeroku.recipe_management_system.controller;
 import jakarta.validation.Valid;
 import kosukeroku.recipe_management_system.dto.RecipeRequestDto;
 import kosukeroku.recipe_management_system.dto.RecipeResponseDto;
+import kosukeroku.recipe_management_system.security.UserPrincipal;
 import kosukeroku.recipe_management_system.service.RecipeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
 
 import java.util.List;
 import java.util.Map;
@@ -24,8 +25,11 @@ public class RecipeController {
     }
 
     @PostMapping("/new")
-    public Map<String, Long> addRecipe(@RequestBody @Valid RecipeRequestDto recipe) {
-        long id = recipeService.saveRecipe(recipe);
+    public Map<String, Long> addRecipe(@RequestBody @Valid RecipeRequestDto recipe,
+                                       @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        String email = userPrincipal.getUsername();
+        long id = recipeService.saveRecipe(recipe, email);
         return Map.of("id", id);
     }
 
@@ -43,18 +47,23 @@ public class RecipeController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteRecipe(@PathVariable Long id) {
-        recipeService.deleteRecipeById(id);
+    public void deleteRecipe(@PathVariable Long id,
+                             @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        String email = userPrincipal.getUsername();
+        recipeService.deleteRecipeById(id, email);
     }
 
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateRecipe(@PathVariable Long id, @RequestBody @Valid RecipeRequestDto recipe) {
+    public void updateRecipe(@PathVariable Long id, @RequestBody @Valid RecipeRequestDto recipe,
+                             @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        recipeService.updateRecipeById(id, recipe);
+        String email = userPrincipal.getUsername();
+        recipeService.updateRecipeById(id, recipe, email);
     }
 
-    @GetMapping( "/search")
+    @GetMapping("/search")
     public ResponseEntity<List<RecipeResponseDto>> searchRecipeByCategoryOrName(
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String name) {
@@ -76,9 +85,7 @@ public class RecipeController {
         }
 
 
-
     }
-
 
 
 }
