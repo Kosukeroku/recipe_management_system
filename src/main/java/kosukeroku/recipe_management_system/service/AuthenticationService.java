@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -39,21 +40,19 @@ public class AuthenticationService {
     }
 
     public LoginJwtResponseDto login(LoginRequestDto loginRequest) {
+
         try {
-            authenticationManager.authenticate(
+            Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getEmail(), loginRequest.getPassword()
                     )
             );
 
-            User user = userRepository.findByEmail(loginRequest.getEmail())
-                    .orElseThrow(InvalidCredentialsException::new);
-
-            UserPrincipal userPrincipal = new UserPrincipal(user);
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
             String token = jwtTokenProvider.generateToken(userPrincipal);
 
-            return new LoginJwtResponseDto(token, user.getEmail());
+            return new LoginJwtResponseDto(token, userPrincipal.getUsername());
 
         } catch (BadCredentialsException e) {
             throw new InvalidCredentialsException();
